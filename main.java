@@ -9,7 +9,7 @@ public class main {
         SwingUtilities.invokeLater(new Runnable() { 
             @Override
             public void run() {
-                
+
                 JFrame janela = new JFrame("janela de teste");
 
                 janela.setSize(900, 600);
@@ -19,7 +19,15 @@ public class main {
 
                 janela.setLocationRelativeTo(null);
 
+                // alocar o canvas na memoria
+                Canvas canvas = new Canvas();
+
+                // .add serve pra colocar o canvas dentro da janela, tipo um filho
+                janela.add(canvas);
+
                 janela.setVisible(true);
+
+
             }
         });
     }
