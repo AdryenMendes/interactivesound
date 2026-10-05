@@ -7,41 +7,74 @@ import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.List;
 
-
 public class Canvas extends JPanel {
 
-    private List<Point> pontos = new ArrayList<>();     // new array: array dinamico em memoria
+    // guardamos uma lista de tracos
+    private List<Stroke> strokes = new ArrayList<>();
+    
+    // Guarda a referência do traço que está sendo desenhado nesse momento
+    private Stroke currentStroke = null;
+
     public Canvas() {
         setBackground(Color.WHITE);
+
+        MouseAdapter mouseHandler = new MouseAdapter() {
+            
+            // quando o botão do mouse for pressionado
+            @Override
+            public void mousePressed(MouseEvent e) {
+                currentStroke = new Stroke();                 // cria um novo traço na memória
+                currentStroke.addPoint(e.getPoint());         // adiciona o primeiro ponto onde o clique aconteceu
+                strokes.add(currentStroke);                   // adiciona esse novo traço à lista principal de traços da tela
+                repaint();                                    // pede para o Java redesenhar a tela
+            }
+
+            // quando o mouse pressionado fpr arrastado
+            @Override
+            public void mouseDragged(MouseEvent e) {
+                if (currentStroke != null) {                 // se existir um traço ativo em andamento:
+                    currentStroke.addPoint(e.getPoint());    // adiciona a posição atual do mouse ao traço em curso
+                    repaint();
+                }
+            }
+
+            // quando o botão do mouse for solto
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                currentStroke = null;
+            }
+        };
+
+        // registrar msm objeto p cliques e p movimentos de arrasto
+        addMouseListener(mouseHandler);
+        addMouseMotionListener(mouseHandler);
     }
-
-     // mousePressed é chamado quando o botão do mouse é pressionado
-    MouseAdapter tratadorDoMouse = new MouseAdapter() {
-         @Override
-        public void mousePressed(MouseEvent e) {        // 'e' contém as informações do evento.
-            Point clique = e.getPoint();            // 'e.getPoint()' retorna um objeto Point com o (x, y) exato do clique.
-
-            pontos.add(clique);
-            repaint();
-        }
-    };
 
     @Override
     protected void paintComponent(Graphics g) {
+        super.paintComponent(g);
 
-            super.paintComponent(g);
-            g.setColor(Color.RED);
-            int tamanho = 60;
+        // cor do traco
+        g.setColor(Color.BLACK);
 
-        for (Point p : pontos) {
-            // fillOval: desenha círculos preenchidos
-            // parâmetros: (X, Y, Largura, Altura)
-            // P bolinha ficar centralizada no clique, subtraímos metade da largura/altura.
-            g.fillOval(p.x - (tamanho / 2), p.y - (tamanho / 2), tamanho, tamanho);
+        // percorrer cada traco salvo na lista
+        for (Stroke s : strokes) {
+            List<Point> pts = s.getPoints();
+
+            // desenhar a linha conectando cada ponto ao seguinte
+            for (int i = 0; i < pts.size() - 1; i++) {
+                Point p1 = pts.get(i);
+                Point p2 = pts.get(i + 1);
+
+                // segmento de reta de p1 a p2
+                g.drawLine(p1.x, p1.y, p2.x, p2.y);
+            }
+
+            // 1 clique = bolinha
+            if (pts.size() == 1) {
+                Point p = pts.get(0);
+                g.fillOval(p.x - 2, p.y - 2, 4, 4);
+            }
         }
     }
 }
-
-
-
-
