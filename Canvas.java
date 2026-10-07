@@ -1,4 +1,5 @@
 import javax.swing.JPanel;
+import javax.swing.Timer;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics;
@@ -19,11 +20,18 @@ public class Canvas extends JPanel {
     // Guarda a referência do traço que está sendo desenhado nesse momento
     private Stroke currentStroke = null;
 
+    // variaveis de animação / sequenciador
+    private float playheadX = 0;
+    private boolean isPlaying = true;
+    private int bpm = 120;
+
+
+
+
     public Canvas() {
         setBackground(Color.WHITE);
 
         MouseAdapter mouseHandler = new MouseAdapter() {
-            
             // quando o botão do mouse for pressionado
             @Override
             public void mousePressed(MouseEvent e) {
@@ -49,9 +57,25 @@ public class Canvas extends JPanel {
             }
         };
 
+
         // registrar msm objeto p cliques e p movimentos de arrasto
         addMouseListener(mouseHandler);
         addMouseMotionListener(mouseHandler);
+
+
+        Timer gameLoop = new Timer(16, e -> {
+            if (isPlaying) {
+                float pixelsPerFrame = (bpm / 60.0f) * 2.0f;
+                playheadX += pixelsPerFrame;
+
+                // se a janela for minimizada, getWidth() pode ser <= 0
+                if (getWidth() > 0 && playheadX > getWidth()) {
+                    playheadX = 0;                   // volta pro inicio da tela num loop
+                }
+                repaint();                           // desenha nova posição do playhead
+            }
+        });
+        gameLoop.start();
     }
 
     @Override
@@ -69,9 +93,9 @@ public class Canvas extends JPanel {
         drawGrid(g2);
 
         /*  config da caneta
-            1. largura da linha: 4 pixels
-            2. CAP_ROUND: as extremidades sao pontas redondas
-            3. JOIN_ROUND: dobras e curvas conectadas suavemente 
+            - largura da linha: 4 pixels
+            - CAP_ROUND: as extremidades sao pontas redondas
+            - JOIN_ROUND: dobras e curvas conectadas suavemente 
         */
         g2.setColor(Color.BLACK);
         g2.setStroke(new BasicStroke(4, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
@@ -96,7 +120,13 @@ public class Canvas extends JPanel {
                 g.fillOval(p.x - 2, p.y - 2, 4, 4);
             }
         }
+
+        // barra vertical fina na cordenada playheadX atual
+        g2.setColor(new Color(60, 60, 60));
+        g2.setStroke(new BasicStroke(2));
+        g2.drawLine((int) playheadX, 0, (int) playheadX, getHeight());
     }
+
 
     // função auxiliar p criar a grade  -  linhas horizontais e verticais
     private void drawGrid(Graphics2D g2) {
