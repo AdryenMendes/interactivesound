@@ -22,10 +22,8 @@ public class Canvas extends JPanel {
 
     // variaveis de animação / sequenciador
     private float playheadX = 0;
-    private boolean isPlaying = true;
+    private boolean isPlaying = false;
     private int bpm = 120;
-
-
 
 
     public Canvas() {
@@ -57,12 +55,11 @@ public class Canvas extends JPanel {
             }
         };
 
-
         // registrar msm objeto p cliques e p movimentos de arrasto
         addMouseListener(mouseHandler);
         addMouseMotionListener(mouseHandler);
 
-
+        // loop de animação do playhead
         Timer gameLoop = new Timer(16, e -> {
             if (isPlaying) {
                 float pixelsPerFrame = (bpm / 60.0f) * 2.0f;
@@ -77,6 +74,18 @@ public class Canvas extends JPanel {
         });
         gameLoop.start();
     }
+
+    
+    // permitir q outros arquivos controlem repodução
+    public void setPlaying(boolean playing) {
+        this.isPlaying = playing;
+        repaint();
+    }
+
+    public boolean isPlaying() {
+        return this.isPlaying;
+    }
+
 
     @Override
     protected void paintComponent(Graphics g) {
