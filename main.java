@@ -32,6 +32,12 @@ public class main {
                 initMidi(janela);           // inicialização do sistema de audio
 
                 Canvas canvas = new Canvas();
+
+                // LeadSynth: ser o instrumento ativo de desenho
+                if (leadTrack != null) {
+                canvas.setSelectedTrack(leadTrack);
+                }
+
                 janela.setLayout(new BorderLayout());                // definir direções na janela
                 janela.add(canvas, BorderLayout.CENTER);            // canvas ocupa centro da janela
 

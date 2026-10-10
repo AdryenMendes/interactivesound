@@ -5,7 +5,7 @@ import java.awt.Color;
 // 1° intrumento
 public class LeadSynth extends InstrumentTrack {
     public LeadSynth(Synthesizer synth, int channelNum){
-        super(synth, channelNum, 11, new Color(155, 89, 182));     //super' chama construtor da classe pai
+        super(synth, channelNum, 11, new Color(155, 89, 182));     // chama construtor da classe pai
     }
 
 }

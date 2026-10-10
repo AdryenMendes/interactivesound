@@ -12,13 +12,17 @@ import java.util.ArrayList;
 import java.util.List;
 
 
+
 public class Canvas extends JPanel {
 
-    // guardamos uma lista de tracos
+    // guarda uma lista de tracos
     private List<Stroke> strokes = new ArrayList<>();
     
-    // Guarda a referência do traço que está sendo desenhado nesse momento
+    // guarda a referência do traço que está sendo desenhado nesse momento
     private Stroke currentStroke = null;
+
+    // guarda o instrumento ativo
+    private SoundChannel selectedTrack = null;
 
     // variaveis de animação / sequenciador
     private float playheadX = 0;
@@ -33,16 +37,16 @@ public class Canvas extends JPanel {
             // quando o botão do mouse for pressionado
             @Override
             public void mousePressed(MouseEvent e) {
-                currentStroke = new Stroke();                 // cria um novo traço na memória
+                currentStroke = new Stroke(selectedTrack);
                 currentStroke.addPoint(e.getPoint());         // adiciona o primeiro ponto onde o clique aconteceu
-                strokes.add(currentStroke);                   // adiciona esse novo traço à lista principal de traços da tela
+                strokes.add(currentStroke);                   // adiciona esse novo traço a lista principal de traços da tela
                 repaint();                                    // pede para o Java redesenhar a tela
             }
 
             // quando o mouse pressionado fpr arrastado
             @Override
             public void mouseDragged(MouseEvent e) {
-                if (currentStroke != null) {                 // se existir um traço ativo em andamento
+                if (currentStroke != null) {                 // se tiver traço ativo em andamento
                     currentStroke.addPoint(e.getPoint());    // adiciona a posição atual do mouse ao traço em curso
                     repaint();
                 }
@@ -75,6 +79,12 @@ public class Canvas extends JPanel {
         gameLoop.start();
     }
 
+
+    // deixa q a janela principal escolha qual instrumento vai ser usado
+    public void setSelectedTrack(SoundChannel track) {
+        this.selectedTrack = track;
+    }
+
     
     // permitir q outros arquivos controlem repodução
     public void setPlaying(boolean playing) {
@@ -91,7 +101,7 @@ public class Canvas extends JPanel {
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
 
-        // graphics2D permite controle sobre espessura e filtro
+        // graphics2D possibilitaa controle sobre espessura e filtro
         Graphics2D g2 = (Graphics2D) g;
 
         // filtro q calcula tons intermediários nas bordas da linha
@@ -106,12 +116,19 @@ public class Canvas extends JPanel {
             - CAP_ROUND: as extremidades sao pontas redondas
             - JOIN_ROUND: dobras e curvas conectadas suavemente 
         */
-        g2.setColor(Color.BLACK);
         g2.setStroke(new BasicStroke(4, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
 
  
         // percorrer cada traco salvo na lista
         for (Stroke s : strokes) {
+
+            // usa cor do instrumento associado ao traço
+            if (s.getTrack() != null) {
+                g2.setColor(s.getTrack().getColor());
+            } else {
+                g2.setColor(Color.BLACK);
+            }
+
             List<Point> pts = s.getPoints();
 
             // desenhar a linha conectando cada ponto ao seguinte
@@ -120,13 +137,13 @@ public class Canvas extends JPanel {
                 Point p2 = pts.get(i + 1);
 
                 // segmento de reta de p1 a p2
-                g.drawLine(p1.x, p1.y, p2.x, p2.y);
+                g2.drawLine(p1.x, p1.y, p2.x, p2.y);
             }
 
             // 1 clique = bolinha
             if (pts.size() == 1) {
                 Point p = pts.get(0);
-                g.fillOval(p.x - 2, p.y - 2, 4, 4);
+                g2.fillOval(p.x - 3, p.y - 3, 6, 6);
             }
         }
 
@@ -137,18 +154,18 @@ public class Canvas extends JPanel {
     }
 
 
-    // função auxiliar p criar a grade  -  linhas horizontais e verticais
+    // função auxiliar p criar a grade - linhas horizontais e verticais
     private void drawGrid(Graphics2D g2) {
         g2.setColor(new Color(245, 245, 245));      // cinza claro
         g2.setStroke(new BasicStroke(1));           // traço fino de 1 pixel
 
 
         for (int x = 0; x < getWidth(); x += 30) {          // linhas verticais espaçadas a cada 30 pixels
-            g2.drawLine(x, 0, x, getHeight());          // getWidth(): retorna a largura atual da tela
+            g2.drawLine(x, 0, x, getHeight());              // getWidth(): retorna a largura atual da tela
         }
 
         for (int y = 0; y < getHeight(); y += 30) {         // Linhas horizontais espaçadas a cada 30 pixels
-            g2.drawLine(0, y, getWidth(), y);           // getHeight(): retorna a altura atual da tela
+            g2.drawLine(0, y, getWidth(), y);               // getHeight(): retorna a altura atual da tela
         }
     }
 }
