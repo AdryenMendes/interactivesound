@@ -41,6 +41,11 @@ public class Canvas extends JPanel {
     private boolean isPlaying = false;
     private int bpm = 120;
 
+    // variaveis da borracha
+    private boolean isEraserMode = false;
+    private int eraserRadius = 25;
+    private Point eraserCursorPos = null;
+
 
     public Canvas() {
         setBackground(Color.WHITE);
@@ -49,19 +54,27 @@ public class Canvas extends JPanel {
             // quando o botão do mouse for pressionado
             @Override
             public void mousePressed(MouseEvent e) {
-                currentStroke = new Stroke(selectedTrack);
-                currentStroke.addPoint(e.getPoint());         // adiciona o primeiro ponto onde o clique aconteceu
-                strokes.add(currentStroke);                   // adiciona esse novo traço a lista principal de traços da tela
-                repaint();                                    // pede para o Java redesenhar a tela
+                if (isEraserMode) {
+                    eraseAt(e.getPoint());
+                } else {
+
+                    currentStroke = new Stroke(selectedTrack);
+                    currentStroke.addPoint(e.getPoint());         // adiciona o primeiro ponto onde o clique aconteceu
+                    strokes.add(currentStroke);                   // adiciona esse novo traço a lista principal de traços da tela
+                }
+                repaint();
             }
 
             // quando o mouse pressionado fpr arrastado
             @Override
             public void mouseDragged(MouseEvent e) {
-                if (currentStroke != null) {                 // se tiver traço ativo em andamento
-                    currentStroke.addPoint(e.getPoint());    // adiciona a posição atual do mouse ao traço em curso
-                    repaint();
+                if (isEraserMode) {
+                    eraserCursorPos = e.getPoint();         // atualiza cursor
+                    eraseAt(e.getPoint());                  // continua apagando
+                } else if (currentStroke != null){          // se tiver traço ativo em andamento
+                    currentStroke.addPoint(e.getPoint());   // adiciona a posição atual do mouse ao traço em curso
                 }
+                repaint();
             }
 
             // quando o botão do mouse for solto
@@ -69,12 +82,28 @@ public class Canvas extends JPanel {
             public void mouseReleased(MouseEvent e) {
                 currentStroke = null;
             }
+
+            // percebe quando mouse so anda e atualiza o circulo
+            @Override 
+            public void mouseMoved(MouseEvent e) {
+                if (isEraserMode) {
+                 eraserCursorPos = e.getPoint();
+                    repaint();
+                }
+            }
+
+            // quando o mouse sai da janela, esconde o circulo da borracha
+            @Override 
+            public void mouseExited(MouseEvent e) {
+                eraserCursorPos = null;
+                repaint();
+            }
         };
+
 
         // registrar msm objeto p cliques e p movimentos de arrasto
         addMouseListener(mouseHandler);
         addMouseMotionListener(mouseHandler);
-
 
 
         // loop de animação do playhead (+- 60 fps)
@@ -94,6 +123,61 @@ public class Canvas extends JPanel {
             }
         });
         gameLoop.start();
+    }
+
+
+    // borracha: percorre os tracos e apaga os que estão dentro do raio
+    private void eraseAt(Point center) {
+        List<Stroke> newStrokes = new ArrayList<>();
+
+        for (Stroke s : strokes) {
+            Stroke currentSegment = new Stroke(s.getTrack());
+
+            for (Point p : s.getPoints()) {
+                if (p.distance(center) >= eraserRadius) {               // ponto fora do raio
+                    currentSegment.addPoint(p);                     
+                } else if (!currentSegment.getPoints().isEmpty()) {     // ponto dentro do raio = 
+                    newStrokes.add(currentSegment);                     // é apagado
+                    currentSegment = new Stroke(s.getTrack());
+                }
+            }
+
+            // salva o ultimo pedaco do traco (caso tenha sobrado)
+            if (!currentSegment.getPoints().isEmpty()) {
+                newStrokes.add(currentSegment);
+            }
+        }
+
+        // substituicao: lista antiga -< lista nova cortada
+        this.strokes = newStrokes;
+    }
+
+
+    // botao limpa todos os desenhos e traços
+    public void clearAll() {
+        stopAllNotes();
+        strokes.clear();
+        repaint();
+    }
+
+
+    public void setEraserMode(boolean active) {
+        this.isEraserMode = active;
+        if (!active) {
+            eraserCursorPos = null;
+        }
+        repaint();
+    }
+    
+
+    public boolean isEraserMode(){
+        return this.isEraserMode;
+    }
+
+
+    public void setEraserRadius(int radius) {
+        this.eraserRadius = radius;
+        repaint();
     }
 
 
@@ -263,6 +347,7 @@ public class Canvas extends JPanel {
     }
 
 
+    // desenho
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
@@ -328,6 +413,19 @@ public class Canvas extends JPanel {
             }
         }
 
+        // desenha deliminacao da borracha
+        if (isEraserMode && eraserCursorPos != null){
+            int diametro = eraserRadius * 2;
+            int x = eraserCursorPos.x - eraserRadius;
+            int y = eraserCursorPos.y - eraserRadius;
+
+            g2.setColor(new Color(255, 100, 100, 40));
+            g2.fillOval(x, y, diametro, diametro);
+
+            g2.setColor(new Color(255, 50, 50));
+            g2.setStroke(new BasicStroke(1.5f));
+            g2.drawOval(x, y, diametro, diametro);
+        }
     }
 
 
