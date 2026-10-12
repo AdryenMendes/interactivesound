@@ -252,6 +252,12 @@ public class Canvas extends JPanel {
     }
 
 
+    // deixa a janela principal alterar a velocidade do sequenciador
+    public void setBpm(int bpm) {
+        this.bpm = bpm;
+    }
+
+
     public boolean isPlaying() {
         return this.isPlaying;
     }

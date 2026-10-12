@@ -3,11 +3,14 @@ import javax.sound.midi.MidiUnavailableException;
 import javax.sound.midi.Synthesizer;
 import javax.swing.JButton;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JSlider;
 import javax.swing.SwingUtilities;
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
@@ -32,37 +35,45 @@ public class main {
                 initMidi(janela);           // inicialização do sistema de audio
 
                 Canvas canvas = new Canvas();
-
-                // LeadSynth: ser o instrumento ativo de desenho
                 if (leadTrack != null) {
-                canvas.setSelectedTrack(leadTrack);
+                    canvas.setSelectedTrack(leadTrack);
                 }
 
                 janela.setLayout(new BorderLayout());                // definir direções na janela
                 janela.add(canvas, BorderLayout.CENTER);            // canvas ocupa centro da janela
 
-                // barraa de ferramentas
+                // barra inferior
                 JPanel toolbar = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 10));       
                 toolbar.setBackground(new Color(245, 245, 245));
 
-                // botão de play / pause
+                // 1. botão de play / pause
                 JButton btnPlay = new JButton("Play");
                 btnPlay.addActionListener(e -> {                        // clique via lambda
                     boolean novoEstado = !canvas.isPlaying();           
                     canvas.setPlaying(novoEstado);                      // inverte o estado atual
                     btnPlay.setText(novoEstado ? "Pause" : "Play");     // atualizar texto de acordo com estado
                 });
+                toolbar.add(btnPlay);
 
-                // botão p testar o áudio MIDI
-                JButton btnTestAudio = new JButton("testar som (Nota Dó)");
-                btnTestAudio.addActionListener(e -> {
-                    if (leadTrack != null) {
-                    leadTrack.noteOn(60);
-                    }
+                // separador visual
+                toolbar.add(new JLabel("|"));           // separadoer visual
+
+                // 2. rotulo do bpm atual
+                JLabel lblBpm = new JLabel("BPM: 120");
+
+                // 3. slider de bpm
+                JSlider bpmJSlider = new JSlider(60, 300, 120);
+                bpmJSlider.setPreferredSize(new Dimension(150, 40));
+
+                bpmJSlider.addChangeListener(e ->{
+                    int valorBpm = bpmJSlider.getValue();
+                    canvas.setBpm(valorBpm);
+                    lblBpm.setText("BPM: " + valorBpm);
                 });
-            
-            toolbar.add(btnTestAudio);
-            toolbar.add(btnPlay);
+
+            toolbar.add(lblBpm);
+            toolbar.add(bpmJSlider);
+
             janela.add(toolbar, BorderLayout.SOUTH);
 
             // fechar sintetizador quando janela fechar
