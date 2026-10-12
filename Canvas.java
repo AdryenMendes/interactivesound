@@ -33,6 +33,9 @@ public class Canvas extends JPanel {
     // guarda as notas q estao tocando em cada instrumento
     private Map<SoundChannel, Set<Integer>> activeNotes = new HashMap<>();
 
+    // guarda os pontos onde a barra ta cortando os tracos nql frame
+    private List<Point> activeIntersectionVisuals = new ArrayList<>();
+
     // variaveis de animação / sequenciador
     private float playheadX = 0;
     private boolean isPlaying = false;
@@ -122,6 +125,8 @@ public class Canvas extends JPanel {
 
     // detectar colisoes
     private void checkCollisions() {
+        //limpar pontos visuais do frame anterior
+        activeIntersectionVisuals.clear();
         // notas q a barra ta atingindo nesse momentoi
         Map<SoundChannel, Set<Integer>> notesCurrentlyHit = new HashMap<>();
 
@@ -141,6 +146,8 @@ public class Canvas extends JPanel {
                     notesCurrentlyHit                           // registro
                         .computeIfAbsent(s.getTrack(), k -> new HashSet<>())
                         .add(pitch);
+                    activeIntersectionVisuals                   // registro p desenhar cursos 
+                        .add(new Point((int) playheadX, p.y));          
                 }
                 continue;
             }
@@ -160,6 +167,8 @@ public class Canvas extends JPanel {
                     notesCurrentlyHit
                         .computeIfAbsent(s.getTrack(), k -> new HashSet<>())
                         .add(pitch);
+                    activeIntersectionVisuals 
+                        .add(new Point((int) playheadX, interpolatedY));  
                 }
             }
         }
@@ -220,6 +229,7 @@ public class Canvas extends JPanel {
         }
 
         activeNotes.clear();
+        activeIntersectionVisuals.clear();
     }
 
 
@@ -301,6 +311,17 @@ public class Canvas extends JPanel {
         g2.setColor(new Color(60, 60, 60));
         g2.setStroke(new BasicStroke(2));
         g2.drawLine((int) playheadX, 0, (int) playheadX, getHeight());
+
+        // desenhar pontos de colisão
+        if (isPlaying) {
+            for (Point hit : activeIntersectionVisuals) {
+                g2.setColor(Color.BLACK);
+                g2.fillOval(hit.x - 6, hit.y -  6, 12, 12);
+                g2.setColor(Color.WHITE);
+                g2.fillOval(hit.x - 2, hit.y - 3, 4, 4);
+            }
+        }
+
     }
 
 
