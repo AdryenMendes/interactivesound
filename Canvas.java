@@ -1,3 +1,4 @@
+import instruments.SoundChannel;
 import javax.swing.JPanel;
 import javax.swing.Timer;
 import java.awt.BasicStroke;

@@ -1,3 +1,4 @@
+import instruments.*;
 import javax.sound.midi.MidiSystem;
 import javax.sound.midi.MidiUnavailableException;
 import javax.sound.midi.Synthesizer;
@@ -8,7 +9,6 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JSlider;
-import javax.swing.Spring;
 import javax.swing.SwingUtilities;
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -16,13 +16,15 @@ import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.util.ArrayList;
+import java.util.List;
 
 
 
 public class main {
 
     private static Synthesizer synth;
-    private static SoundChannel leadTrack;
+    private static List<SoundChannel> tracks = new ArrayList<>();
 
     public static void main(String[] args) {
         
@@ -30,15 +32,15 @@ public class main {
         // invoker: janela só abra quando o java estiver 100%
         SwingUtilities.invokeLater(() -> {
             JFrame janela = new JFrame("janela de teste");
-            janela.setSize(900, 600);
+            janela.setSize(1050, 700);
             janela.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             janela.setLocationRelativeTo(null);
 
             initMidi(janela);           // inicialização do sistema de audio
-
             Canvas canvas = new Canvas();
-            if (leadTrack != null) {
-                canvas.setSelectedTrack(leadTrack);
+
+            if (!tracks.isEmpty()) {
+                canvas.setSelectedTrack(tracks.get(0));
             }
 
             janela.setLayout(new BorderLayout());                // definir direções na janela
@@ -112,6 +114,25 @@ public class main {
             toolbar.add(btnClear);
 
 
+            // 6. paleta dos 6 instrumentos
+            JPanel palette = new JPanel(new FlowLayout(FlowLayout.CENTER, 4, 0));
+            palette.setOpaque(false);
+
+            for (SoundChannel t : tracks){
+                JButton colorBtn = new JButton();
+                colorBtn.setBackground(t.getColor());
+                colorBtn.setPreferredSize(new Dimension(26, 26));           // tamanho do quadradinho
+                colorBtn.setFocusPainted(false);
+
+                colorBtn.addActionListener(e -> {
+                    canvas.setSelectedTrack(t);
+                    canvas.setEraserMode(false);
+                });
+                palette.add(colorBtn);
+            }
+            toolbar.add(palette);
+
+
             janela.add(toolbar, BorderLayout.SOUTH);
 
             // fechar sintetizador quando janela fechar
@@ -137,8 +158,13 @@ public class main {
             synth = MidiSystem.getSynthesizer();
             synth.open();
 
-            // cria instrumento Lead Synth no canal 0
-            leadTrack = new LeadSynth(synth, 0);
+            // instancia de 6 instrumentos em canais separados
+            tracks.add(new LeadSynth(synth, 0));
+            tracks.add(new BassSynth(synth, 1));
+            tracks.add(new BellSynth(synth, 2));
+            tracks.add(new PadSynth(synth, 3));
+            tracks.add(new PianoSynth(synth, 4));
+            tracks.add(new StringsSynth(synth, 5));
 
         } 
 
