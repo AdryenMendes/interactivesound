@@ -2,6 +2,7 @@ import instruments.*;
 import javax.sound.midi.MidiSystem;
 import javax.sound.midi.MidiUnavailableException;
 import javax.sound.midi.Synthesizer;
+import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JFrame;
@@ -10,6 +11,8 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JSlider;
 import javax.swing.SwingUtilities;
+import javax.swing.border.Border;
+
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
@@ -50,6 +53,14 @@ public class main {
             JPanel toolbar = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 10));       
             toolbar.setBackground(new Color(245, 245, 245));
 
+            // estilos de borda
+            Border activeColorBorder = BorderFactory.createLineBorder(new Color(30, 30, 30), 3);
+            Border inactiveColorBorder = BorderFactory.createLineBorder(new Color(190, 190, 190), 1);
+            Border activeToolBorder = BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(30, 30, 30), 2),
+                BorderFactory.createEmptyBorder(3, 10, 3, 10)
+            );
+
 
             // 1. botão de play / pause
             JButton btnPlay = new JButton("Play");
@@ -81,14 +92,24 @@ public class main {
             toolbar.add(new JLabel("|"));     
 
 
-            // 3. caneta e borracha
-            JButton btnPen = new JButton("Caneta");
+            // lista p gerenciar botoes da paleta
+            List<JButton> colorButtons = new ArrayList<>();
+
+
+            // 3. borracha
             JButton btnEraser = new JButton("Borracha");
+            btnEraser.setPreferredSize(new Dimension(100, 28)); // mesma altura (28) das cores
+            Border defaltErasBorder = btnEraser.getBorder();
 
-            btnPen.addActionListener(e -> canvas.setEraserMode(false));
-            btnEraser.addActionListener(e -> canvas.setEraserMode(true));
+            btnEraser.addActionListener(e -> {
+                canvas.setEraserMode(true);
+                btnEraser.setBorder(activeToolBorder);          // destaque visual
 
-            toolbar.add(btnPen);
+                for (JButton b : colorButtons){
+                    b.setBorder(inactiveColorBorder);           // remove borda grossa dos intrumentos
+                }
+            });
+
             toolbar.add(btnEraser);
 
 
@@ -115,19 +136,33 @@ public class main {
 
 
             // 6. paleta dos 6 instrumentos
-            JPanel palette = new JPanel(new FlowLayout(FlowLayout.CENTER, 4, 0));
+            JPanel palette = new JPanel(new FlowLayout(FlowLayout.CENTER, 6, 0));
             palette.setOpaque(false);
 
-            for (SoundChannel t : tracks){
+            for (int i = 0; i < tracks.size(); i++){
+                SoundChannel t = tracks.get(i);
                 JButton colorBtn = new JButton();
                 colorBtn.setBackground(t.getColor());
                 colorBtn.setPreferredSize(new Dimension(26, 26));           // tamanho do quadradinho
                 colorBtn.setFocusPainted(false);
 
+                // o 1° instrumento ja tm a borda escura
+                if (i == 0) {
+                    colorBtn.setBorder(activeColorBorder);
+                } else {
+                    colorBtn.setBorder(inactiveColorBorder);
+                }
+
                 colorBtn.addActionListener(e -> {
                     canvas.setSelectedTrack(t);
                     canvas.setEraserMode(false);
+                    btnEraser.setBorder((defaltErasBorder));
+
+                    for (JButton b : colorButtons) {            // coloca borda so no botao clicado
+                        b.setBorder(b == colorBtn ? activeColorBorder : inactiveColorBorder);
+                    }
                 });
+                colorButtons.add(colorBtn);
                 palette.add(colorBtn);
             }
             toolbar.add(palette);
@@ -146,7 +181,6 @@ public class main {
             });
 
             janela.setVisible(true);
-
         });
     }
 
