@@ -12,7 +12,6 @@ import javax.swing.JPanel;
 import javax.swing.JSlider;
 import javax.swing.SwingUtilities;
 import javax.swing.border.Border;
-
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
@@ -193,12 +192,12 @@ public class main {
             synth.open();
 
             // instancia de 6 instrumentos em canais separados
-            tracks.add(new LeadSynth(synth, 0));
-            tracks.add(new BassSynth(synth, 1));
-            tracks.add(new BellSynth(synth, 2));
-            tracks.add(new PadSynth(synth, 3));
+            tracks.add(new Marimba(synth, 0));
+            tracks.add(new SlowStrings(synth, 1));
+            tracks.add(new MusicBox(synth, 2));
+            tracks.add(new WarmPad(synth, 3));
             tracks.add(new PianoSynth(synth, 4));
-            tracks.add(new StringsSynth(synth, 5));
+            tracks.add(new FretlessBass(synth, 5));
 
         } 
 

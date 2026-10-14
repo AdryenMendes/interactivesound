@@ -22,7 +22,8 @@ public abstract class InstrumentTrack implements SoundChannel {
         this.channel = synth.getChannels()[channelNum];             // pega canal fisico de som do sintetizador
         this.channel.programChange(program);                        // programChange toca o timbre do canal
         this.color = color;
-        this.channel.controlChange(91, 127);      // codigo 91: controla reverb. 105 é o ressoamento
+        this.channel.controlChange(91, 120);      // codigo 91: controla reverb
+        this.channel.controlChange(72, 110);      // codigo 72: controla duração ao receber noteoff    
     }
 
     @Override 

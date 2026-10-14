@@ -4,10 +4,10 @@ import java.awt.Color;
 
 
 
-public class BassSynth extends InstrumentTrack {
-    public BassSynth(Synthesizer s, int ch) {
+public class SlowStrings extends InstrumentTrack {
+    public SlowStrings(Synthesizer s, int ch) {
          // bass, cazul
-        super(s, ch, 32, new Color(52, 152, 219));
+        super(s, ch, 49, new Color(52, 152, 219));
     }
 
     // o baixo toca 1 oitava mais baixo (12 semitons)

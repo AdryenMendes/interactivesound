@@ -4,10 +4,10 @@ import java.awt.Color;
 
 
 
-public class PadSynth extends InstrumentTrack {
-    public PadSynth(Synthesizer s, int ch) {
+public class WarmPad extends InstrumentTrack {
+    public WarmPad(Synthesizer s, int ch) {
         // pad new age, vermelho
-        super(s, ch, 88, new Color(231, 76, 60));
+        super(s, ch, 89, new Color(231, 76, 60));
     }
 
     // pad toca mais macio (volume 45 em vez de 60)
