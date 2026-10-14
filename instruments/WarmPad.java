@@ -6,7 +6,7 @@ import java.awt.Color;
 
 public class WarmPad extends InstrumentTrack {
     public WarmPad(Synthesizer s, int ch) {
-        // pad new age, vermelho
+        // pad quente, vermelho
         super(s, ch, 89, new Color(231, 76, 60));
     }
 

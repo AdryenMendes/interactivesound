@@ -13,9 +13,9 @@ public abstract class InstrumentTrack implements SoundChannel {
 
     /** intrumenttrack:
         - synth:       sintetizador central de áudio do Java
-        = channelNum:  número da trilha midi
+        - channelNum:  número da trilha midi
         - program:     código do instrumento General midi
-        = color:       cor com a qual as notas deste instrumento serão desenhadas
+        - color:       cor com a qual as notas deste instrumento serão desenhadas
      */
 
     public InstrumentTrack(Synthesizer synth, int channelNum, int program, Color color) {

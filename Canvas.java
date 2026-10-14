@@ -1,6 +1,5 @@
 import instruments.SoundChannel;
 import javax.swing.JPanel;
-import javax.swing.Timer;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics;
@@ -10,13 +9,7 @@ import java.awt.RenderingHints;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 
 
@@ -31,25 +24,17 @@ public class Canvas extends JPanel {
     // guarda o instrumento ativo
     private SoundChannel selectedTrack = null;
 
-    // guarda as notas q estao tocando em cada instrumento
-    private Map<SoundChannel, Set<Integer>> activeNotes = new HashMap<>();
-
-    // guarda os pontos onde a barra ta cortando os tracos nql frame
-    private List<Point> activeIntersectionVisuals = new ArrayList<>();
-
-    // variaveis de animação / sequenciador
-    private float playheadX = 0;
-    private boolean isPlaying = false;
-    private int bpm = 120;
-
     // variaveis da borracha
     private boolean isEraserMode = false;
     private int eraserRadius = 25;
     private Point eraserCursorPos = null;
 
+    // referencia para o sequenciador musical
+    private Sequencer sequencer;
 
     public Canvas() {
         setBackground(Color.WHITE);
+        this.sequencer = new Sequencer(this);
 
         MouseAdapter mouseHandler = new MouseAdapter() {
             // quando o botão do mouse for pressionado
@@ -58,7 +43,6 @@ public class Canvas extends JPanel {
                 if (isEraserMode) {
                     eraseAt(e.getPoint());
                 } else {
-
                     currentStroke = new Stroke(selectedTrack);
                     currentStroke.addPoint(e.getPoint());         // adiciona o primeiro ponto onde o clique aconteceu
                     strokes.add(currentStroke);                   // adiciona esse novo traço a lista principal de traços da tela
@@ -70,10 +54,10 @@ public class Canvas extends JPanel {
             @Override
             public void mouseDragged(MouseEvent e) {
                 if (isEraserMode) {
-                    eraserCursorPos = e.getPoint();         // atualiza cursor
-                    eraseAt(e.getPoint());                  // continua apagando
-                } else if (currentStroke != null){          // se tiver traço ativo em andamento
-                    currentStroke.addPoint(e.getPoint());   // adiciona a posição atual do mouse ao traço em curso
+                    eraserCursorPos = e.getPoint();             // atualiza cursor
+                    eraseAt(e.getPoint());                      // continua apagando
+                } else if (currentStroke != null) {         // se tiver traço ativo em andamento
+                    currentStroke.addPoint(e.getPoint());       // adiciona a posição atual do mouse ao traço em curso
                 }
                 repaint();
             }
@@ -84,11 +68,11 @@ public class Canvas extends JPanel {
                 currentStroke = null;
             }
 
-            // percebe quando mouse so anda e atualiza o circulo
+            // percebe quando mouse so anda e atualiza o circulo da borracha
             @Override 
             public void mouseMoved(MouseEvent e) {
                 if (isEraserMode) {
-                 eraserCursorPos = e.getPoint();
+                    eraserCursorPos = e.getPoint();
                     repaint();
                 }
             }
@@ -101,31 +85,10 @@ public class Canvas extends JPanel {
             }
         };
 
-
         // registrar msm objeto p cliques e p movimentos de arrasto
         addMouseListener(mouseHandler);
         addMouseMotionListener(mouseHandler);
-
-
-        // loop de animação do playhead (+- 60 fps)
-        Timer gameLoop = new Timer(16, e -> {
-            if (isPlaying) {
-                float pixelsPerFrame = (bpm / 60.0f) * 2.0f;
-                playheadX += pixelsPerFrame;
-
-                // se a janela for minimizada, getWidth() pode ser <= 0
-                if (getWidth() > 0 && playheadX > getWidth()) {
-                    playheadX = 0;          // volta pro inicio da tela num loop
-                    stopAllNotes();         // desliga notas ao reiniciar o ciclo
-                }
-
-                checkCollisions();          // ve se a barra cruzou algum traço
-                repaint();                  // desenha nova posição do playhead
-            }
-        });
-        gameLoop.start();
     }
-
 
     // borracha: percorre os tracos e apaga os que estão dentro do raio
     private void eraseAt(Point center) {
@@ -143,24 +106,22 @@ public class Canvas extends JPanel {
                 }
             }
 
-            // salva o ultimo pedaco do traco (caso tenha sobrado)
+            // salva o ultimo pedaco do traco, caso tenha sobrado
             if (!currentSegment.getPoints().isEmpty()) {
                 newStrokes.add(currentSegment);
             }
         }
 
-        // substituicao: lista antiga -< lista nova cortada
+        // substituicao: lista antiga -> lista nova cortada
         this.strokes = newStrokes;
     }
 
-
     // botao limpa todos os desenhos e traços
     public void clearAll() {
-        stopAllNotes();
+        sequencer.stopAllNotes();
         strokes.clear();
         repaint();
     }
-
 
     public void setEraserMode(boolean active) {
         this.isEraserMode = active;
@@ -169,184 +130,37 @@ public class Canvas extends JPanel {
         }
         repaint();
     }
-    
 
-    public boolean isEraserMode(){
+    public boolean isEraserMode() {
         return this.isEraserMode;
     }
-
 
     public void setEraserRadius(int radius) {
         this.eraserRadius = radius;
         repaint();
     }
 
-
-    // converter cordenadas Y numa nota musical
-    private int calculatePitch(int y){
-        // notas da escala pentatonica (menor)
-        int[] scale = {
-            48, 51, 53, 55, 58,
-            60, 63, 65, 67, 70,
-            72, 75, 77, 79, 82,
-        };
-    
-        if (getHeight() <= 0){
-            return scale[0];
-        }
-
-        // topo = notas agudas
-        int inverdedY = getHeight() - y;
-
-        // converte posiçao vert num indice entre 0 e 14
-        int noteIndex = (inverdedY * scale.length) / getHeight();
-
-        // 0 <= indice <= 14
-        noteIndex = Math.max(0, Math.min(scale.length - 1, noteIndex));
-
-        return scale[noteIndex];
-    }
-
-
-    // detectar colisoes
-    private void checkCollisions() {
-        //limpar pontos visuais do frame anterior
-        activeIntersectionVisuals.clear();
-        // notas q a barra ta atingindo nesse momentoi
-        Map<SoundChannel, Set<Integer>> notesCurrentlyHit = new HashMap<>();
-
-        for (Stroke s : strokes) {
-            if (s.getTrack() == null){ 
-                continue;                       // ignotar tracos sem intrumentos associados
-            }
-
-            List<Point> pts = s.getPoints();
-
-            // caso 1: traco formado por 1 ponto
-            if (pts.size() == 1) {
-                Point p = pts.get(0);
-
-                if (Math.abs(p.x - playheadX) < 3) {            // colisao
-                    int pitch = calculatePitch(p.y);            // conversao
-                    notesCurrentlyHit                           // registro
-                        .computeIfAbsent(s.getTrack(), k -> new HashSet<>())
-                        .add(pitch);
-                    activeIntersectionVisuals                   // registro p desenhar cursos 
-                        .add(new Point((int) playheadX, p.y));          
-                }
-                continue;
-            }
-            
-            // caso 2: traco formado por varios pontos
-            for (int i = 0; i < pts.size() - 1; i++) {
-                Point p1 = pts.get(i);
-                Point p2 = pts.get(i + 1);
-                int minX = Math.min(p1.x, p2.x);
-                int maxX = Math.max(p1.x, p2.x);
-
-                if (playheadX >= minX && playheadX <= maxX && (maxX - minX) > 0) {
-                    float t = (playheadX - p1.x) / (float) (p2.x - p1.x);           // porcent do deslocamento entre pontos
-                    int interpolatedY = Math.round(p1.y + t * (p2.y - p1.y));       // posição real
-                    int pitch = calculatePitch(interpolatedY);
-
-                    notesCurrentlyHit
-                        .computeIfAbsent(s.getTrack(), k -> new HashSet<>())
-                        .add(pitch);
-                    activeIntersectionVisuals 
-                        .add(new Point((int) playheadX, interpolatedY));  
-                }
-            }
-        }
-
-        // 1° parte: ligar notas q tao sendo atingidas
-        for (Map.Entry<SoundChannel, Set<Integer>> entry : notesCurrentlyHit.entrySet()){
-            SoundChannel track = entry.getKey();
-            Set<Integer> currentPitches = entry.getValue();
-            Set<Integer> activePiches = activeNotes.computeIfAbsent(track, k -> new HashSet<>());
-
-            for (Integer pitch : currentPitches) {
-                // so liga a nota se ela n tiver tocando
-                if (!activePiches.contains(pitch)) {
-                    track.noteOn(pitch);
-                    activePiches.add(pitch);
-                }
-            }
-
-        }
-
-        // 2° parte: desligar notas q n tao mais sendo atingidas
-        Iterator<Map.Entry<SoundChannel, Set<Integer>>> iterator = activeNotes.entrySet().iterator();
-
-        while (iterator.hasNext()) {
-            Map.Entry<SoundChannel, Set<Integer>> entry = iterator.next();
-            SoundChannel track = entry.getKey();
-            Set<Integer> activePitches = entry.getValue();
-            Set<Integer> currentPitches = notesCurrentlyHit.getOrDefault(track, Collections.emptySet());
-            Iterator<Integer> noteIterator = activePitches.iterator();
-
-             while (noteIterator.hasNext()) {
-                int pitch = noteIterator.next();
-
-                // se barra n ta mais cruzando a nota = desliga o som e tira do conjunto "ativas"
-                if (!currentPitches.contains(pitch)) {
-                    track.noteOff(pitch);
-                    noteIterator.remove();
-                }
-            }
-
-            // remove instrumentos q n tem notas ativas
-            if (activePitches.isEmpty()) {
-                iterator.remove();
-            }
-
-        }
-    }
-
-
-    // desligar todas as notas q tao tocando
-    private void stopAllNotes() {
-        for (Map.Entry<SoundChannel, Set<Integer>> entry : activeNotes.entrySet()) {
-            SoundChannel track = entry.getKey();
-
-            for (Integer pitch : entry.getValue()){
-                track.noteOff(pitch);
-            }
-        }
-
-        activeNotes.clear();
-        activeIntersectionVisuals.clear();
-    }
-
-
     // deixa q a janela principal escolha qual instrumento vai ser usado
     public void setSelectedTrack(SoundChannel track) {
         this.selectedTrack = track;
     }
 
+    public List<Stroke> getStrokes() {
+        return strokes;
+    }
 
-    // controla reprodução usando outros arquivos
+    // metodos de delegacao p manter compatibilidade com o main
     public void setPlaying(boolean playing) {
-        this.isPlaying = playing;
-
-        // pausar = silencia as notas imediatamente
-        if (!playing) {
-            stopAllNotes();
-        }
-
-        repaint();
+        sequencer.setPlaying(playing);
     }
-
-
-    // deixa a janela principal alterar a velocidade do sequenciador
-    public void setBpm(int bpm) {
-        this.bpm = bpm;
-    }
-
 
     public boolean isPlaying() {
-        return this.isPlaying;
+        return sequencer.isPlaying();
     }
 
+    public void setBpm(int bpm) {
+        sequencer.setBpm(bpm);
+    }
 
     // desenho
     @Override
@@ -370,7 +184,6 @@ public class Canvas extends JPanel {
         */
         g2.setStroke(new BasicStroke(4, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
 
- 
         // percorrer cada traco salvo na lista
         for (Stroke s : strokes) {
 
@@ -400,13 +213,14 @@ public class Canvas extends JPanel {
         }
 
         // barra vertical fina na cordenada playheadX atual
+        float currentPlayheadX = sequencer.getPlayheadX();
         g2.setColor(new Color(60, 60, 60));
         g2.setStroke(new BasicStroke(2));
-        g2.drawLine((int) playheadX, 0, (int) playheadX, getHeight());
+        g2.drawLine((int) currentPlayheadX, 0, (int) currentPlayheadX, getHeight());
 
         // desenhar pontos de colisão
-        if (isPlaying) {
-            for (Point hit : activeIntersectionVisuals) {
+        if (sequencer.isPlaying()) {
+            for (Point hit : sequencer.getActiveIntersectionVisuals()) {
                 g2.setColor(Color.BLACK);
                 g2.fillOval(hit.x - 6, hit.y -  6, 12, 12);
                 g2.setColor(Color.WHITE);
@@ -415,7 +229,7 @@ public class Canvas extends JPanel {
         }
 
         // desenha deliminacao da borracha
-        if (isEraserMode && eraserCursorPos != null){
+        if (isEraserMode && eraserCursorPos != null) {
             int diametro = eraserRadius * 2;
             int x = eraserCursorPos.x - eraserRadius;
             int y = eraserCursorPos.y - eraserRadius;
@@ -429,18 +243,16 @@ public class Canvas extends JPanel {
         }
     }
 
-
     // função auxiliar p criar a grade - linhas horizontais e verticais
     private void drawGrid(Graphics2D g2) {
-        g2.setColor(new Color(245, 245, 245));      // cinza claro
-        g2.setStroke(new BasicStroke(1));           // traço fino de 1 pixel
+        g2.setColor(new Color(245, 245, 245));           // cinza claro
+        g2.setStroke(new BasicStroke(1));                 // traço fino de 1 pixel
 
-
-        for (int x = 0; x < getWidth(); x += 30) {          // linhas verticais espaçadas a cada 30 pixels
+        for (int x = 0; x < getWidth(); x += 30) {              // linhas verticais espaçadas a cada 30 pixels
             g2.drawLine(x, 0, x, getHeight());              // getWidth(): retorna a largura atual da tela
         }
 
-        for (int y = 0; y < getHeight(); y += 30) {         // Linhas horizontais espaçadas a cada 30 pixels
+        for (int y = 0; y < getHeight(); y += 30) {             // Linhas horizontais espaçadas a cada 30 pixels
             g2.drawLine(0, y, getWidth(), y);               // getHeight(): retorna a altura atual da tela
         }
     }
