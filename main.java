@@ -23,7 +23,7 @@ import java.util.List;
 
 
 
-public class main {
+public class Main {
 
     private static Synthesizer synth;
     private static List<SoundChannel> tracks = new ArrayList<>();
@@ -33,7 +33,7 @@ public class main {
         // swing precisa rodar interface dentro de uma thread
         // invoker: janela só abra quando o java estiver 100%
         SwingUtilities.invokeLater(() -> {
-            JFrame janela = new JFrame("janela de teste");
+            JFrame janela = new JFrame("Interactive Sound");
             janela.setSize(1050, 700);
             janela.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             janela.setLocationRelativeTo(null);
@@ -98,7 +98,7 @@ public class main {
             // 3. borracha
             JButton btnEraser = new JButton("Borracha");
             btnEraser.setPreferredSize(new Dimension(100, 28)); // mesma altura (28) das cores
-            Border defaltErasBorder = btnEraser.getBorder();
+            Border defaltEraserBorder = btnEraser.getBorder();
 
             btnEraser.addActionListener(e -> {
                 canvas.setEraserMode(true);
@@ -155,7 +155,7 @@ public class main {
                 colorBtn.addActionListener(e -> {
                     canvas.setSelectedTrack(t);
                     canvas.setEraserMode(false);
-                    btnEraser.setBorder((defaltErasBorder));
+                    btnEraser.setBorder((defaltEraserBorder));
 
                     for (JButton b : colorButtons) {            // coloca borda so no botao clicado
                         b.setBorder(b == colorBtn ? activeColorBorder : inactiveColorBorder);

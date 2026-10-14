@@ -10,6 +10,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+
+
 public class Sequencer {
 
     // variaveis de animação / sequenciador
@@ -62,10 +64,10 @@ public class Sequencer {
         }
 
         // topo = notas agudas
-        int inverdedY = canvas.getHeight() - y;
+        int invertedY = canvas.getHeight() - y;
 
         // converte posiçao vert num indice entre 0 e 14
-        int noteIndex = (inverdedY * scale.length) / canvas.getHeight();
+        int noteIndex = (invertedY * scale.length) / canvas.getHeight();
 
         // 0 <= indice <= 14
         noteIndex = Math.max(0, Math.min(scale.length - 1, noteIndex));
@@ -127,13 +129,13 @@ public class Sequencer {
         for (Map.Entry<SoundChannel, Set<Integer>> entry : notesCurrentlyHit.entrySet()) {
             SoundChannel track = entry.getKey();
             Set<Integer> currentPitches = entry.getValue();
-            Set<Integer> activePiches = activeNotes.computeIfAbsent(track, k -> new HashSet<>());
+            Set<Integer> activePitches = activeNotes.computeIfAbsent(track, k -> new HashSet<>());
 
             for (Integer pitch : currentPitches) {
                 // so liga a nota se ela n tiver tocando
-                if (!activePiches.contains(pitch)) {
+                if (!activePitches.contains(pitch)) {
                     track.noteOn(pitch);
-                    activePiches.add(pitch);
+                    activePitches.add(pitch);
                 }
             }
         }
